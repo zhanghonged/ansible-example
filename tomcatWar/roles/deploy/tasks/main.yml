@@ -1,0 +1,64 @@
+---
+- name: Include Variables.
+  include_vars: vars/vars.yml
+
+- name: 确认服务器上war包存放目录是否存在，不存在则创建
+  file:
+    path: "{{ tomcat_dir }}/eduWAR"
+    state: directory
+
+- name: 确认服务器上war包备份目录是否存在，不存在则创建
+  file:
+    path: "{{ tomcat_dir }}/eduWAR_backup"
+    state: directory
+
+- name: 拷贝edu.war到服务器上
+  synchronize:
+    src: "{{ jenkins_workspace }}/{{ job_name }}/target/{{ project_name }}.war"
+    dest: "{{ tomcat_dir }}/eduWAR/"
+
+- name: 关闭tomcat服务
+  shell: ps -ef | grep /usr/local/apache-tomcat-7.0.85 | grep -v grep |awk '{print $2}'| xargs kill -9
+
+- name: 验证tomcat是否关闭成功
+  wait_for:
+    port=8080
+    state=stopped
+    timeout=3
+
+- name: 判断当前项目下是否有edu.war包文件
+  stat:
+    path={{ tomcat_dir }}/webapps/{{ project_name }}.war
+  register: war_existed
+
+- name: 备份当前edu项目
+  shell: cp {{ tomcat_dir }}/webapps/{{ project_name }}.war {{ tomcat_dir }}/eduWAR_backup/{{ project_name }}_$(date +"%Y%m%d%H%M%S").war
+  when: war_existed.stat.exists == true
+
+- name: 重命名当前项目下的edu.war文件
+  shell: mv {{ tomcat_dir }}/webapps/{{ project_name }}.{war,warbak}
+  when: war_existed.stat.exists == true
+
+- name: 判断当前环境下是否有edu项目
+  stat:
+    path={{ tomcat_dir }}/webapps/{{ project_name }}
+  register: edu_existed
+
+- name: edu项目存在则删除
+  file:
+    path: "{{ tomcat_dir }}/webapps/{{ project_name }}"
+    state: absent
+  when: edu_existed.stat.isdir is defined and edu_existed.stat.isdir
+
+- name: 复制新的edu.war 到项目路径
+  command: mv {{ tomcat_dir }}/eduWAR/{{ project_name }}.war {{ tomcat_dir }}/webapps/
+
+- name: 启动tomcat
+  shell: nohup {{ tomcat_dir }}/bin/startup.sh
+
+- name: 验证tomcat是否启动成功
+  wait_for:
+    port=8080
+    state=started
+    delay=20
+    timeout=30

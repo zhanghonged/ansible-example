@@ -1,0 +1,6 @@
+---
+- name: Include variables.
+  include_vars: vars/vars.yml
+
+- name: maven编译打包
+  shell: cd {{ jenkins_workspace }}/{{ job_name }} && {{ maven_home }}/bin/mvn clean install -Dmaven.test.skip=true

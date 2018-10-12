@@ -1,0 +1,5 @@
+---
+pack_dir: /data/share/repo/edu
+jenkins_workspace: /root/.jenkins/workspace
+job_name: edu-war-ansible
+project_name: edu

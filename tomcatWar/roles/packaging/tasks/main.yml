@@ -1,0 +1,25 @@
+---
+- name: Include variables.
+  include_vars: vars/vars.yml
+
+- name: 生成当前日期字符串
+  shell: echo `date +%Y%m%d%H%M`
+  register: date_dir
+
+- name: 创建包存放日期目录
+  file:
+    path: "{{ pack_dir }}/{{ date_dir.stdout }}"
+    state: directory 
+    owner: zhouhe
+    group: zhouhe
+
+- name: 拷贝edu.war包到指定目录
+  synchronize:
+    src: "{{ jenkins_workspace }}/{{ job_name }}/target/{{ project_name }}.war"
+    dest: "{{ pack_dir }}/{{ date_dir.stdout }}"
+
+- name: 修改edu.war包文件访问权限
+  file:
+    path: "{{ pack_dir }}/{{ date_dir.stdout }}/{{ project_name }}.war"
+    state: touch
+    mode: 0644

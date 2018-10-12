@@ -1,0 +1,4 @@
+---
+jenkins_workspace: /root/.jenkins/workspace
+maven_home: /usr/apache-maven-3.5.3
+job_name: edu-war-ansible
